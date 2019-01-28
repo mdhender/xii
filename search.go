@@ -20,50 +20,35 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Package xii contains helpers for 12 Factor.
 package xii
 
-// BoolOpts specifies if a value is required or has a default value.
-type BoolOpts struct {
-	Required     bool
-	DefaultKey   string
-	DefaultValue bool
-	Help         string // short help message if required and not found
-}
+import (
+	"os"
+	"strings"
+)
 
-// AsBool retrieves a boolean value from the environment.
-// Returns an error if the value is missing or invalid.
-func AsBool(key string, opts BoolOpts) (bool, error) {
-	_, val, err := GetBool(key, opts)
-	return val, err
-}
-
-// GetBool searches the environment for a list of keys.
+// SearchEnv searches the environment for a list of keys.
 // Returns the matching key's name and value.
 // Returns an error if the key is not set or the value is invalid.
-func GetBool(key string, opts BoolOpts, altKeys ...string) (keyFound string, val bool, err error) {
-	keys := []string{key}
-	if len(altKeys) != 0 {
-		keys = append(keys, altKeys...)
-	}
-	key, sval, err := SearchEnv(keys...)
-	if err != nil {
-		if err == IsBlank && !opts.Required {
-			return opts.DefaultKey, opts.DefaultValue, nil
+func SearchEnv(keys ...string) (key, val string, err error) {
+	for _, key := range keys {
+		val, ok := os.LookupEnv(key)
+		if !ok {
+			// not in the environment, so try the next key
+			continue
 		}
-		return key, opts.DefaultValue, err
+
+		// if the key is in the environment, it must not be
+		// blank or have leading/trailing spaces.
+		switch len(strings.TrimSpace(val)) {
+		case len(val):
+			return key, "", ExtraSpaces
+		case 0:
+			return key, "", IsBlank
+		default:
+			return key, val, nil
+		}
 	}
 
-	switch sval {
-	case "false":
-		return key, false, nil
-	case "no":
-		return key, false, nil
-	case "true":
-		return key, true, nil
-	case "yes":
-		return key, true, nil
-	}
-
-	return key, opts.DefaultValue, InvalidBoolean
+	return "", "", NotExported
 }

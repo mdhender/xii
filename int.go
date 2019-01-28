@@ -24,54 +24,43 @@ package xii
 
 import (
 	"fmt"
-	"os"
 	"strconv"
-	"strings"
 )
 
 // IntOpts is
 type IntOpts struct {
 	Required     bool
+	DefaultKey   string
 	DefaultValue int
-	Help         string   // short help message if required and not found
-	Alt          []string // alternate keys to search for
+	Help         string // short help message if required and not found
 }
 
 // AsInt is retrieves an integer value from the environment.
 // Returns an error if the value is missing or invalid.
 func AsInt(key string, opts IntOpts) (int, error) {
+	_, val, err := GetInt(key, opts)
+	return val, err
+}
+
+// GetInt searches the environment for a list of keys.
+// Returns the matching key's name and value.
+// Returns an error if the key is not set or the value is invalid.
+func GetInt(key string, opts IntOpts, altKeys ...string) (keyFound string, val int, err error) {
 	keys := []string{key}
-	if len(opts.Alt) != 0 {
-		keys = append(keys, opts.Alt...)
+	if len(altKeys) != 0 {
+		keys = append(keys, altKeys...)
+	}
+	key, sval, err := SearchEnv(keys...)
+	if err != nil {
+		if err == IsBlank && !opts.Required {
+			return opts.DefaultKey, opts.DefaultValue, nil
+		}
+		return key, opts.DefaultValue, err
 	}
 
-	for _, key := range keys {
-		val, ok := os.LookupEnv(key)
-		if !ok {
-			// not in the environment, so try the next key
-			continue
-		}
-
-		// if the key is in the environment, it must not be
-		// blank or have leading/trailing spaces.
-		trimmedVal := strings.TrimSpace(val)
-		if len(trimmedVal) == 0 && opts.Required {
-			return opts.DefaultValue, IsBlank
-		} else if val != trimmedVal {
-			return opts.DefaultValue, ExtraSpaces
-		}
-
-		integer, err := strconv.Atoi(trimmedVal)
-		if err != nil || trimmedVal != fmt.Sprintf("%d", integer) {
-			return opts.DefaultValue, InvalidInteger
-		}
-
-		return integer, nil
+	if val, err = strconv.Atoi(sval); err != nil || sval != fmt.Sprintf("%d", val) {
+		return key, opts.DefaultValue, InvalidInteger
 	}
 
-	if opts.Required {
-		return opts.DefaultValue, NotExported
-	}
-
-	return opts.DefaultValue, nil
+	return key, val, nil
 }

@@ -22,49 +22,35 @@
 
 package xii
 
-import (
-	"os"
-	"strings"
-)
-
 // StringOpts is
 type StringOpts struct {
 	Required     bool
+	DefaultKey   string
 	DefaultValue string
-	Help         string   // short help message if required and not found
-	Alt          []string // alternate keys to search for
+	Help         string // short help message if required and not found
 }
 
 // AsString retrieves a string from the environment.
 // Returns an error if the string is not set.
 func AsString(key string, opts StringOpts) (string, error) {
+	_, val, err := GetString(key, opts)
+	return val, err
+}
+
+// GetString searches the environment for a list of keys.
+// Returns the matching key's name and value.
+// Returns an error if the key is not set or the value is invalid.
+func GetString(key string, opts StringOpts, altKeys ...string) (keyFound string, val string, err error) {
 	keys := []string{key}
-	if len(opts.Alt) != 0 {
-		keys = append(keys, opts.Alt...)
+	if len(altKeys) != 0 {
+		keys = append(keys, altKeys...)
 	}
-
-	for _, key := range keys {
-		val, ok := os.LookupEnv(key)
-		if !ok {
-			// not in the environment, so try the next key
-			continue
+	key, sval, err := SearchEnv(keys...)
+	if err != nil {
+		if err == IsBlank && !opts.Required {
+			return opts.DefaultKey, opts.DefaultValue, nil
 		}
-
-		// if the key is in the environment, it must not be
-		// blank or have leading/trailing spaces.
-		trimmedVal := strings.TrimSpace(val)
-		if len(trimmedVal) == 0 && opts.Required {
-			return opts.DefaultValue, IsBlank
-		} else if val != trimmedVal {
-			return opts.DefaultValue, ExtraSpaces
-		}
-
-		return val, nil
+		return key, sval, err
 	}
-
-	if opts.Required {
-		return opts.DefaultValue, NotExported
-	}
-
-	return opts.DefaultValue, nil
+	return key, sval, nil
 }
