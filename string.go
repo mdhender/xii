@@ -22,8 +22,6 @@
 
 package xii
 
-import "fmt"
-
 // StringOpts is
 type StringOpts struct {
 	Required     bool
@@ -43,8 +41,6 @@ func AsString(key string, opts StringOpts) (string, error) {
 // Returns the matching key's name and value.
 // Returns an error if the key is not set or the value is invalid.
 func GetString(opts StringOpts, keys ...string) (keyFound string, val string, err error) {
-	fmt.Printf("[xii] string keys %q\n", keys)
-
 	key, sval, err := SearchEnv(keys...)
 	if err != nil {
 		if err == NotExported && !opts.Required {
