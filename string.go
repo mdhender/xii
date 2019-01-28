@@ -47,7 +47,7 @@ func GetString(opts StringOpts, keys ...string) (keyFound string, val string, er
 
 	key, sval, err := SearchEnv(keys...)
 	if err != nil {
-		if err == IsBlank && !opts.Required {
+		if err == NotExported && !opts.Required {
 			return opts.DefaultKey, opts.DefaultValue, nil
 		}
 		return key, sval, err

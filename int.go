@@ -48,7 +48,7 @@ func AsInt(key string, opts IntOpts) (int, error) {
 func GetInt(opts IntOpts, keys ...string) (keyFound string, val int, err error) {
 	key, sval, err := SearchEnv(keys...)
 	if err != nil {
-		if err == IsBlank && !opts.Required {
+		if err == NotExported && !opts.Required {
 			return opts.DefaultKey, opts.DefaultValue, nil
 		}
 		return key, opts.DefaultValue, err

@@ -44,7 +44,7 @@ func AsBool(key string, opts BoolOpts) (bool, error) {
 func GetBool(opts BoolOpts, keys ...string) (keyFound string, val bool, err error) {
 	key, sval, err := SearchEnv(keys...)
 	if err != nil {
-		if err == IsBlank && !opts.Required {
+		if err == NotExported && !opts.Required {
 			return opts.DefaultKey, opts.DefaultValue, nil
 		}
 		return key, opts.DefaultValue, err
