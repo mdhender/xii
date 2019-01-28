@@ -23,6 +23,7 @@
 package xii
 
 import (
+	"fmt"
 	"os"
 	"strings"
 )
@@ -31,23 +32,25 @@ import (
 // Returns the matching key's name and value.
 // Returns an error if the key is not set or the value is invalid.
 func SearchEnv(keys ...string) (key, val string, err error) {
+	fmt.Printf("[xii] keys %q\n", keys)
 	for _, key := range keys {
+		fmt.Printf("[xii] key %q\n", key)
 		val, ok := os.LookupEnv(key)
 		if !ok {
 			// not in the environment, so try the next key
 			continue
 		}
+		fmt.Printf("[val] key %q\n", val)
 
 		// if the key is in the environment, it must not be
 		// blank or have leading/trailing spaces.
-		switch len(strings.TrimSpace(val)) {
-		case len(val):
-			return key, "", ExtraSpaces
-		case 0:
-			return key, "", IsBlank
-		default:
-			return key, val, nil
+		trimmedVal := strings.TrimSpace(val)
+		if len(trimmedVal) == 0 {
+			return key, val, IsBlank
+		} else if len(trimmedVal) != len(val) {
+			return key, val, ExtraSpaces
 		}
+		return key, val, nil
 	}
 
 	return "", "", NotExported
