@@ -33,18 +33,14 @@ type StringOpts struct {
 // AsString retrieves a string from the environment.
 // Returns an error if the string is not set.
 func AsString(key string, opts StringOpts) (string, error) {
-	_, val, err := GetString(key, opts)
+	_, val, err := GetString(opts, key)
 	return val, err
 }
 
 // GetString searches the environment for a list of keys.
 // Returns the matching key's name and value.
 // Returns an error if the key is not set or the value is invalid.
-func GetString(key string, opts StringOpts, altKeys ...string) (keyFound string, val string, err error) {
-	keys := []string{key}
-	if len(altKeys) != 0 {
-		keys = append(keys, altKeys...)
-	}
+func GetString(opts StringOpts, keys ...string) (keyFound string, val string, err error) {
 	key, sval, err := SearchEnv(keys...)
 	if err != nil {
 		if err == IsBlank && !opts.Required {

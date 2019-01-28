@@ -34,18 +34,14 @@ type BoolOpts struct {
 // AsBool retrieves a boolean value from the environment.
 // Returns an error if the value is missing or invalid.
 func AsBool(key string, opts BoolOpts) (bool, error) {
-	_, val, err := GetBool(key, opts)
+	_, val, err := GetBool(opts, key)
 	return val, err
 }
 
 // GetBool searches the environment for a list of keys.
 // Returns the matching key's name and value.
 // Returns an error if the key is not set or the value is invalid.
-func GetBool(key string, opts BoolOpts, altKeys ...string) (keyFound string, val bool, err error) {
-	keys := []string{key}
-	if len(altKeys) != 0 {
-		keys = append(keys, altKeys...)
-	}
+func GetBool(opts BoolOpts, keys ...string) (keyFound string, val bool, err error) {
 	key, sval, err := SearchEnv(keys...)
 	if err != nil {
 		if err == IsBlank && !opts.Required {

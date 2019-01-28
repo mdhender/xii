@@ -38,18 +38,14 @@ type IntOpts struct {
 // AsInt is retrieves an integer value from the environment.
 // Returns an error if the value is missing or invalid.
 func AsInt(key string, opts IntOpts) (int, error) {
-	_, val, err := GetInt(key, opts)
+	_, val, err := GetInt(opts, key)
 	return val, err
 }
 
 // GetInt searches the environment for a list of keys.
 // Returns the matching key's name and value.
 // Returns an error if the key is not set or the value is invalid.
-func GetInt(key string, opts IntOpts, altKeys ...string) (keyFound string, val int, err error) {
-	keys := []string{key}
-	if len(altKeys) != 0 {
-		keys = append(keys, altKeys...)
-	}
+func GetInt(opts IntOpts, keys ...string) (keyFound string, val int, err error) {
 	key, sval, err := SearchEnv(keys...)
 	if err != nil {
 		if err == IsBlank && !opts.Required {
