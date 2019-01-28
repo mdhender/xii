@@ -20,48 +20,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Package xii contains helpers for 12 Factor.
 package xii
 
-import (
-	"os"
-	"strings"
+// Errors used by the package.
+const (
+	ExtraSpaces    = constError("must not contain leading or trailing spaces")
+	InvalidBoolean = constError("must be either true or false")
+	InvalidInteger = constError("must be a valid integer")
+	IsBlank        = constError("must not be blank")
+	NotExported    = constError("must be exported")
 )
 
-// BoolOpts specifies if a value is required or has a default value.
-type BoolOpts struct {
-	Required     bool
-	DefaultValue bool
-	Help         string // short help message if required and not found
-}
+// declarations to support constant errors
+type constError string
 
-// AsBool retrieves a boolean value from the environment.
-// Returns an error if the value is missing or invalid.
-func AsBool(key string, opts BoolOpts) (bool, error) {
-	val, ok := os.LookupEnv(key)
-	if !ok {
-		if opts.Required {
-			return opts.DefaultValue, NotExported
-		}
-		return opts.DefaultValue, nil
-	}
-
-	trimmedVal := strings.TrimSpace(val)
-	if opts.Required && trimmedVal == "" {
-		return opts.DefaultValue, IsBlank
-	} else if val != trimmedVal {
-		return opts.DefaultValue, ExtraSpaces
-	}
-
-	switch trimmedVal {
-	case "false":
-		return false, nil
-	case "no":
-		return false, nil
-	case "true":
-		return true, nil
-	case "yes":
-		return true, nil
-	}
-	return opts.DefaultValue, InvalidBoolean
+func (ce constError) Error() string {
+	return string(ce)
 }
