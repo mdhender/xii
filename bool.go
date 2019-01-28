@@ -32,36 +32,50 @@ import (
 type BoolOpts struct {
 	Required     bool
 	DefaultValue bool
-	Help         string // short help message if required and not found
+	Help         string   // short help message if required and not found
+	Alt          []string // alternate keys to search for
 }
 
 // AsBool retrieves a boolean value from the environment.
 // Returns an error if the value is missing or invalid.
 func AsBool(key string, opts BoolOpts) (bool, error) {
-	val, ok := os.LookupEnv(key)
-	if !ok {
-		if opts.Required {
-			return opts.DefaultValue, NotExported
+	keys := []string{key}
+	if len(opts.Alt) != 0 {
+		keys = append(keys, opts.Alt...)
+	}
+
+	for _, key := range keys {
+		val, ok := os.LookupEnv(key)
+		if !ok {
+			// not in the environment, so try the next key
+			continue
 		}
-		return opts.DefaultValue, nil
+
+		// if the key is in the environment, it must not be
+		// blank or have leading/trailing spaces.
+		trimmedVal := strings.TrimSpace(val)
+		if len(trimmedVal) == 0 && opts.Required {
+			return opts.DefaultValue, IsBlank
+		} else if val != trimmedVal {
+			return opts.DefaultValue, ExtraSpaces
+		}
+
+		switch trimmedVal {
+		case "false":
+			return false, nil
+		case "no":
+			return false, nil
+		case "true":
+			return true, nil
+		case "yes":
+			return true, nil
+		}
+		return opts.DefaultValue, InvalidBoolean
 	}
 
-	trimmedVal := strings.TrimSpace(val)
-	if opts.Required && trimmedVal == "" {
-		return opts.DefaultValue, IsBlank
-	} else if val != trimmedVal {
-		return opts.DefaultValue, ExtraSpaces
+	if opts.Required {
+		return opts.DefaultValue, NotExported
 	}
 
-	switch trimmedVal {
-	case "false":
-		return false, nil
-	case "no":
-		return false, nil
-	case "true":
-		return true, nil
-	case "yes":
-		return true, nil
-	}
-	return opts.DefaultValue, InvalidBoolean
+	return opts.DefaultValue, nil
 }
